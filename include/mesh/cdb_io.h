@@ -52,31 +52,27 @@ public:
   /**
    * Constructor.  Takes a non-const Mesh reference which it
    * will fill up with elements via the read() command.
-   */
+  */
   explicit
   CDBIO (MeshBase & mesh);
 
   /**
    * Constructor.  Takes a reference to a constant mesh object.
    * This constructor will only allow us to write the mesh.
-   */
+  */
   explicit
   CDBIO (const MeshBase & mesh);
-
-
-
 
   /**
    * This method should implement writing a mesh to a specified file
    * in the *.cdb format. But it is currently not implemented.
-   */
+  */
   virtual void write (const std::string & name) {};
 
   /**
    * Reads in a mesh in the Ansys *.cdb format from the ASCII file
    * given by name.
-   *
-   */
+  */
   virtual void read (const std::string & name) override;
 
 private:
@@ -84,12 +80,12 @@ private:
    * Implementation of the read() function.  This function
    * is called by the public interface function and implements
    * reading the file.
-   */
+  */
   void read_mesh (std::istream & in);
 
   /**
    * Defines mapping from libMesh element types to Gmsh element types or vice-versa.
-   */
+  */
   struct AnsysElementDefinition {
     AnsysElementDefinition(unsigned int ansys_type_in,
                            unsigned int dim_in) :
