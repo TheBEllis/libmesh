@@ -177,6 +177,7 @@ include_HEADERS =  \
         mesh/abaqus_io.h \
         mesh/boundary_info.h \
         mesh/boundary_mesh.h \
+        mesh/cdb_io.h \
         mesh/checkpoint_io.h \
         mesh/distributed_mesh.h \
         mesh/dyna_io.h \

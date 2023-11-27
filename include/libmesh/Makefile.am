@@ -167,6 +167,7 @@ BUILT_SOURCES = \
         abaqus_io.h \
         boundary_info.h \
         boundary_mesh.h \
+        cdb_io.h \
         checkpoint_io.h \
         distributed_mesh.h \
         dyna_io.h \
@@ -1073,6 +1074,9 @@ boundary_info.h: $(top_srcdir)/include/mesh/boundary_info.h
 	$(AM_V_GEN)rm -f $@ && $(LN_S) -f $< $@
 
 boundary_mesh.h: $(top_srcdir)/include/mesh/boundary_mesh.h
+	$(AM_V_GEN)rm -f $@ && $(LN_S) -f $< $@
+
+cdb_io.h: $(top_srcdir)/include/mesh/cdb_io.h
 	$(AM_V_GEN)rm -f $@ && $(LN_S) -f $< $@
 
 checkpoint_io.h: $(top_srcdir)/include/mesh/checkpoint_io.h
