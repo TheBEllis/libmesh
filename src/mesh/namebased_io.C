@@ -40,6 +40,7 @@
 #include "libmesh/checkpoint_io.h"
 #include "libmesh/equation_systems.h"
 #include "libmesh/enum_xdr_mode.h"
+#include "libmesh/cdb_io.h"
 #include "libmesh/parallel.h" // broadcast
 
 // C++ includes
@@ -259,6 +260,9 @@ void NameBasedIO::read (const std::string & name)
           else if (basename.rfind(".bez")  < basename.size())
             DynaIO(mymesh, false).read (new_name);
 
+          else if (basename.rfind(".cdb")  < basename.size())
+            CDBIO(mymesh).read (new_name);
+
           else
             {
               libmesh_error_msg(" ERROR: Unrecognized file extension: " \
@@ -284,6 +288,7 @@ void NameBasedIO::read (const std::string & name)
                                 << "     *.vtu  -- Paraview VTK format\n" \
                                 << "     *.xda  -- libMesh ASCII format\n" \
                                 << "     *.xdr  -- libMesh binary format\n" \
+                                << "     *.cdb  -- constant database format\n" \
                                 << "     *.gz   -- any above format gzipped\n" \
                                 << "     *.bz2  -- any above format bzip2'ed\n" \
                                 << "     *.xz   -- any above format xzipped\n" \
