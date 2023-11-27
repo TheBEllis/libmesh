@@ -48,69 +48,24 @@ CDBIO::CDBMaps CDBIO::build_element_maps()
   // Object to be filled up
   CDBMaps em;
 
-  // POINT (import only)
-  em.in.emplace(15, ElementDefinition(NODEELEM, 15, 0, 1));
-
-  // Add elements with trivial node mappings
-  em.add_def(ElementDefinition(EDGE2, 1, 1, 2));
-  em.add_def(ElementDefinition(EDGE3, 8, 1, 3));
-  em.add_def(ElementDefinition(TRI3, 2, 2, 3));
-  em.add_def(ElementDefinition(TRI6, 9, 2, 6));
-  em.add_def(ElementDefinition(QUAD4, 3, 2, 4));
-  em.add_def(ElementDefinition(QUAD8, 16, 2, 8));
-  em.add_def(ElementDefinition(QUAD9, 10, 2, 9));
-  em.add_def(ElementDefinition(HEX8, 5, 3, 8));
-  em.add_def(ElementDefinition(TET4, 4, 3, 4));
-  em.add_def(ElementDefinition(PRISM6, 6, 3, 6));
-  em.add_def(ElementDefinition(PYRAMID5, 7, 3, 5));
-
   // Add elements with non-trivial node mappings
 
-  // HEX20
+  // ANSYS SOLID226
   {
-    ElementDefinition eledef(HEX20, 226, 3, 20);
+    AnsysElementDefinition SOLID226(226, 3);
     
-    //  const unsigned int nodes[] = {0,1,2,3,4,5,6,7,8,9,10,11,16,17,18,19,12,13,14,15};
-    // const unsigned int nodes[] = {0,3,2,1,7,4,5,6,11,8,9,10,19,16,17,18,15,12,13,14};
-    // const unsigned int nodes[] = {3,0,1,2,7,4,5,6,11,8,9,10,19,16,17,18,15,12,13,14};
-    // const unsigned int nodes[] = {3,2,6,7,0,1,5,4,10,18,14,19,11,9,13,15,8,17,12,16};
-    const unsigned int nodes[] = {7,4,0,3,6,5,1,2,15,16,11,19,14,12,8,10,13,17,9,18};
-    std::vector<unsigned int>(nodes, nodes+eledef.nnodes).swap(eledef.nodes); // swap trick
-    em.add_def(eledef);
+    // std::vector<unsigned int> hex_ordering = {7,4,0,3,6,5,1,2,15,16,11,19,14,12,8,10,13,17,9,18};
+    std::vector<unsigned int> hex_ordering = {0,3,2,1,7,4,5,6,11,8,9,10,19,16,17,18,15,12,13,14};
+    std::vector<unsigned int> tet_ordering = {2,0,1,3,6,4,5,9,7,8};
+    std::vector<unsigned int> prism_ordering = {2,0,1,5,3,4,8,6,7,14,12,13,11,9,10};
+    std::vector<unsigned int> pyramid_ordering = {3,0,1,2,4,8,5,6,7,12,9,10,11};
+
+    SOLID226.add_elem_sub_mapping(hex_ordering, libMesh::ElemType::HEX20, "HEX20");
+    SOLID226.add_elem_sub_mapping(tet_ordering, libMesh::ElemType::TET10, "TET10");
+    SOLID226.add_elem_sub_mapping(prism_ordering, libMesh::ElemType::PRISM15, "PRISM15");
+    SOLID226.add_elem_sub_mapping(pyramid_ordering, libMesh::ElemType::PYRAMID13, "PYR13");
+    em.add_def(SOLID226);
   }
-
-  // // HEX27
-  // {
-  //   ElementDefinition eledef(HEX27, 12, 3, 27);
-  //   const unsigned int nodes[] = {0,1,2,3,4,5,6,7,8,11,12,9,13,10,14,
-  //                                 15,16,19,17,1 8,20,21,24,22,23,25,26};
-  //   std::vector<unsigned int>(nodes, nodes+eledef.nnodes).swap(eledef.nodes); // swap trick
-  //   em.add_def(eledef);
-  // }
-
-  // // TET10
-  // {
-  //   ElementDefinition eledef(TET10, 11, 3, 10);
-  //   const unsigned int nodes[] = {0,1,2,3,4,5,6,7,9,8};
-  //   std::vector<unsigned int>(nodes, nodes+eledef.nnodes).swap(eledef.nodes); // swap trick
-  //   em.add_def(eledef);
-  // }
-
-  // // PRISM15
-  // {
-  //   ElementDefinition eledef(PRISM15, 18, 3, 15);
-  //   const unsigned int nodes[] = {0,1,2,3,4,5,6,8,9,7,10,11,12,14,13};
-  //   std::vector<unsigned int>(nodes, nodes+eledef.nnodes).swap(eledef.nodes); // swap trick
-  //   em.add_def(eledef);
-  // }
-
-  // // PRISM18
-  // {
-  //   ElementDefinition eledef(PRISM18, 13, 3, 18);
-  //   const unsigned int nodes[] = {0,1,2,3,4,5,6,8,9,7,10,11,12,14,13,15,17,16};
-  //   std::vector<unsigned int>(nodes, nodes+eledef.nnodes).swap(eledef.nodes); // swap trick
-  //   em.add_def(eledef);
-  // }
 
   return em;
 }
@@ -167,6 +122,7 @@ void CDBIO::read_mesh(std::istream & in)
   int iel = 0;
   int block_num = 1;
   int nodeset_id = 1;
+  int ansys_element_type;
 
   while (true)
     {
@@ -185,11 +141,8 @@ void CDBIO::read_mesh(std::istream & in)
 
           // regex to match the nodes
           std::regex regexp("^\\s+\\d+\\s+\\d+\\s+\\d+\\s+[-+]?\\d+\\.\\d+(E{0,1}[-\\+]\\d+)?\\s+[-+]?\\d+\\.\\d+(E{0,1}[-\\+]\\d+)?\\s+[-+]?\\d+\\.\\d+(E{0,1}[-\\+]\\d+)?\\s*?\\r*?$");
-          // s should point to a string
-          // now we can start reading the nodes
-
-                
-
+          
+          // Now we can start reading the nodes
           // Set s to node line 1, so regex matches correctly
           std::getline(in, s);  
 
@@ -217,7 +170,7 @@ void CDBIO::read_mesh(std::istream & in)
             // maybe only need on of them and search for the key given the 
             // value
             // add cdb node id to map
-            ansys2LibmeshIdMap[ansys_id] = id;
+            ansys_to_libmesh_node_id_map[ansys_id] = id;
             // nodeid2idx[id] = idx;
 
             // increment the node index
@@ -232,11 +185,10 @@ void CDBIO::read_mesh(std::istream & in)
         {
           // we have found the Element Type keyword - there may be more than one
           std::vector<std::string> tokens = tokenize(s);
-          // the first token is ET
-          int element_id = std::stoi(tokens[1]);
-          int element_type = std::stoi(tokens[2]);
 
-          // _element_types_present[element_id] = element_type;
+          // The second token is the ansys element type i.e. SOLID226
+          ansys_element_type = std::stoi(tokens[2]);
+
           // update string
           std::getline(in, s);
         } 
@@ -251,9 +203,22 @@ void CDBIO::read_mesh(std::istream & in)
           // the next line is the real start of the data
           std::getline(in,s);
 
+          // Variable outside of while loop scope, to store last iterations element node count
+          int prev_elem_nodes = -1;
+
+          // Vector to store element types that occur in the ANSYS block
+          std::vector<std::string> block_elem_types;
+
+          // Vector to store block id's that will be used for this ANSYS block
+          std::vector<unsigned int> block_nums;
+          block_nums.push_back(block_num);
+          
           while(true)
           {
-            // if we read a -1, then that indicates the end of the element data
+            // String to keep track of elem type
+            std::string block_elem_type;
+
+            // If we read a -1, then that indicates the end of the element data
             if(s.find("-1") != std::string::npos)
             {
               break;
@@ -275,50 +240,103 @@ void CDBIO::read_mesh(std::istream & in)
             strm >> garbage;
 
             // the next item is the CDB element ID
-            int elid;
+            int ansys_elem_id;
+            strm >> ansys_elem_id;
 
-            strm >> elid;
-
+            // Nodes vector to store the ansys to libmesh node mapping for this element
             std::vector<int> nodes;
-            nodes.reserve(n_cdb_nodes); 
-            // we can now read the first 8 nodes
-            
+                
+            // We can now read the first 8 nodes
             for ( int i = 0 ; i < 8 ; i++)
             {
-              strm >> nodes[i];
+              int temp;
+              strm >> temp;
+              nodes.push_back(temp);
             } 
             
-            // read another line to get the next line of node ID's
-            std::getline(in,s);
-
-            std::stringstream strm_node_line_two(s);         
-            // now we can read the remaining n_cdb_nodes-8 nodes
-            for ( int i = 0 ; i < n_cdb_nodes-8 ; i++) 
+            // If there are more than 8 nodes, we need to read another line
+            if(n_cdb_nodes > 8)
             {
-              strm_node_line_two >> nodes[i+8];
+              // read another line to get the next line of node ID's
+              std::getline(in,s);
+              std::stringstream strm_node_line_two(s);         
+              // now we can read the remaining n_cdb_nodes - 8 nodes
+              for ( int i = 0 ; i < n_cdb_nodes - 8 ; i++) 
+              {
+                int temp;
+                strm_node_line_two >> temp;
+                nodes.push_back(temp);
+              }
             }
 
+            // Remove potential duplicate entries from our nodes vector
+            {
+              std::set<unsigned int> set;            
+              for (auto iter = nodes.begin(); iter != nodes.end();) {
+                if (set.find(*iter) == set.end()) {
+                  set.insert(*iter);
+                  iter++;
+                }
+                else {
+                  iter = nodes.erase(iter);
+                }
+              }
+            }
+
+            /**
+             * Because of ANSYS duplicate node numbering, n_cdb_nodes can be a lie,
+             * hence use the size of the nodes vector with duplicates removed
+             * to determine number of nodes in an element.
+            */
+            int n_elem_nodes = nodes.size();
+    
             // Get the element_map corresponding to the ansys element type we have identified
-            std::vector<unsigned int> elem_map = _cdb_maps.in[226].nodes;
+            std::vector<unsigned int> elem_map;
+            libMesh::ElemType elem_type;
+            std::string elem_type_string;
 
-            // now we can make a new element
-            Elem* elem = mesh.add_elem(Elem::build_with_id(_cdb_maps.in[226].type, iel++));
+            elem_map = _cdb_maps[ansys_element_type].ansys_node_ordering_map[n_elem_nodes];
+            elem_type = _cdb_maps[ansys_element_type].ansys_to_libmesh_elem_type_map[n_elem_nodes];
+            block_elem_type = _cdb_maps[ansys_element_type].ansys_to_libmesh_elem_type_string_map[n_elem_nodes];
+          
+            // Ansys can change element type in the middle of a block. If this happens we need to increment the block number,
+            // because exodus can only deal with one element type per block
+            if(prev_elem_nodes == -1)
+            {
+              block_elem_types.push_back(block_elem_type);
+            }
+
+            // Ansys can change element type in the middle of a block. If this happens we need to increment the block number,
+            // because exodus can only deal with one element type per block
+            if((prev_elem_nodes != -1) && (prev_elem_nodes != n_elem_nodes))
+            {
+              block_nums.push_back(++block_num);
+              block_elem_types.push_back(block_elem_type);
+              std::cout << "ELEMENT TYPE CHANGE MID BLOCK" << std::endl;
+              std::cout << "THE GUILTY BLOCK IS: Block " << block_num << ", " << std::endl;
+            }
+
+            // Now we can make a new element
+            Elem* elem = mesh.add_elem(Elem::build_with_id(elem_type, iel++));
+            elem->subdomain_id() = block_num;
             
-            // iel should likely be a class member variable which can be incremented
-
             // loop over the nodes adding them to the element
-            for ( int i = 0 ; i < n_cdb_nodes ; i++)
+            for ( int i = 0 ; i < n_elem_nodes ; i++)
             {
               // setup the element with the correct node ids;
               // i have no idea if the node ordering is the same for 
               // ansys elements and libmesh elements? 
               // im sure life will be cruel
-              elem->set_node(i) = mesh.node_ptr(ansys2LibmeshIdMap[nodes[elem_map[i]]]);
-              elem->subdomain_id() = block_num;
+
+              // Note: life was cruel
+              elem->set_node(i) = mesh.node_ptr(ansys_to_libmesh_node_id_map[nodes[elem_map[i]]]);
             }
+            // Add element to mesh
             mesh.add_elem(elem);
-            // read a new line
+            // Read a new line
             std::getline(in, s);
+            // Update previous element node count
+            prev_elem_nodes = n_elem_nodes;
           }    
           // we should now have a collection of elements in the map
           // and these can now belong to a block 
@@ -327,9 +345,18 @@ void CDBIO::read_mesh(std::istream & in)
           std::vector<std::string> tokens = tokenize(s);
           // the new block name is given by the 2nd token
           std::string block_name = tokens[1];
+          // Since libmesh is using boost anyway, use boost trim to remove whitespace
           boost::algorithm::trim(block_name);
-          // now correctly name the block
-          mesh.subdomain_name(block_num) = block_name;
+          // Block names with element type identifier
+          if(block_elem_types.size() > 0)
+          {
+            int it = 0;
+            for(auto& elem_type_str : block_elem_types)
+            {
+              mesh.subdomain_name(block_nums[it]) = block_name + "_" + elem_type_str;
+              it++;
+            }
+          }
           // Increment block id
           block_num++;
         } 
@@ -339,9 +366,6 @@ void CDBIO::read_mesh(std::istream & in)
           // Semi global ints to track how many nodes have been added to the "nodes" vector
           int nodeset_counter = 0;
 
-          // This conditional block gets the nodesets from the ansys model
-          std::cout << "CMBLOCK" << std::endl;
-          
           // Tokenize the string, as it contains the number of nodes in the nodeset
           std::vector<std::string> tokens = tokenize(s);
 
@@ -350,9 +374,10 @@ void CDBIO::read_mesh(std::istream & in)
 
           // Second token is the name of the nodeset
           std::string nodeset_name = tokens[1];
+
+          // Given libmesh uses boost, use boost whitespace trim
           boost::algorithm::trim(nodeset_name);
           
-
           // Create a vector to store nodes
           std::vector<int> nodes;
           
@@ -417,10 +442,9 @@ void CDBIO::read_mesh(std::istream & in)
             std::getline(in, s);
           }
 
-          
           for(auto& node: nodes)
           {
-            mesh.get_boundary_info().add_node(ansys2LibmeshIdMap[node], nodeset_id);
+            mesh.get_boundary_info().add_node(ansys_to_libmesh_node_id_map[node], nodeset_id);
           }
           
           // Set the correct nodeset name and increment the nodeset_id for next nodeset

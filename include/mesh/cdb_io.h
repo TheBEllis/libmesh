@@ -76,14 +76,6 @@ public:
    * Reads in a mesh in the Ansys *.cdb format from the ASCII file
    * given by name.
    *
-   * \note The user is responsible for calling Mesh::prepare_for_use()
-   * after reading the mesh and before using it.
-   *
-   * The physical group names defined in the Gmsh-file are stored, depending
-   * on the element dimension, as either subdomain name or as side name. The
-   * IDs of the former can be retrieved by using the MeshBase::get_id_by_name
-   * method; the IDs of the latter can be retrieved by using the
-   * MeshBase::get_boundary_info and the BoundaryInfo::get_id_by_name methods.
    */
   virtual void read (const std::string & name) override;
 
@@ -98,41 +90,57 @@ private:
   /**
    * Defines mapping from libMesh element types to Gmsh element types or vice-versa.
    */
-  struct ElementDefinition {
-    ElementDefinition(ElemType type_in,
-                      unsigned int gmsh_type_in,
-                      unsigned int dim_in,
-                      unsigned int nnodes_in) :
-      type(type_in),
-      gmsh_type(gmsh_type_in),
-      dim(dim_in),
-      nnodes(nnodes_in)
+  struct AnsysElementDefinition {
+    AnsysElementDefinition(unsigned int ansys_type_in,
+                           unsigned int dim_in) :
+      ansys_type(ansys_type_in),
+      dim(dim_in)
     {}
     
     // Needs default constructor otherwise the compiler throws a hissy fit for unknown reasons??
-    ElementDefinition(){}
+    AnsysElementDefinition(){}
 
-    ElemType type;
-    unsigned int gmsh_type;
+    // Struct data
+    unsigned int ansys_type;
     unsigned int dim;
-    unsigned int nnodes;
-    std::vector<unsigned int> nodes;
+
+    /**
+     *  Each ansys element type can actually refer to multiple element types,
+     *  for example SOLID226 can be a HEX20, TET10, PYRAMID13 or PRISM15. 
+     *  Therefore we need a map to store all of potential element mappings 
+     *  and libmesh element types.
+     * */
+    std::map<unsigned int, std::vector<unsigned int>> ansys_node_ordering_map;
+
+    std::map<unsigned int, libMesh::ElemType> ansys_to_libmesh_elem_type_map;
+
+    std::map<unsigned int, std::string> ansys_to_libmesh_elem_type_string_map;
+
+    /**
+     *  Each ansys element type can actually refer to multiple element types,
+     *  for example SOLID226 can be a HEX20, TET10, PYRAMID13 or PRISM15. 
+     *  Therefore we need a map to store all of potential element "sub" mappings.
+     */
+    void add_elem_sub_mapping(const std::vector<unsigned int>& ansys_node_ordering,
+                              const libMesh::ElemType& elem_type, const std::string& elem_type_string)
+    {
+      ansys_node_ordering_map.emplace(ansys_node_ordering.size(), ansys_node_ordering);
+      ansys_to_libmesh_elem_type_map.emplace(ansys_node_ordering.size(), elem_type); 
+      ansys_to_libmesh_elem_type_string_map.emplace(ansys_node_ordering.size(), elem_type_string); 
+    }
   };
 
   /**
    * struct which holds a map from CDB to libMesh element numberings
    * and vice-versa.
    */
-  struct CDBMaps
+  struct CDBMaps : public std::map<unsigned int, AnsysElementDefinition>
   {
     // Helper function to add a (key, value) pair to both maps
-    void add_def(const ElementDefinition & eledef)
+    void add_def(const AnsysElementDefinition & eledef)
     {
-      out.emplace(eledef.type, eledef);
-      in.emplace(eledef.gmsh_type, eledef);
+      this->emplace(eledef.ansys_type, eledef);
     }
-    std::map<ElemType, ElementDefinition> out;
-    std::map<unsigned int, ElementDefinition> in;
   };
 
   /**
@@ -150,8 +158,7 @@ private:
   /**
    * Map to store mapping of global libmesh node ID's to global CDB node ID's 
   */
-  std::map<unsigned int, unsigned int> ansys2LibmeshIdMap;
-
+  std::map<unsigned int, unsigned int> ansys_to_libmesh_node_id_map;
 };
 
 } // namespace libMesh
