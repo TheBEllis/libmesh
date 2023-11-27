@@ -166,12 +166,8 @@ void CDBIO::read_mesh(std::istream & in)
             // make the node
             mesh.add_point(Point(x, y, z), id);
 
-            // these two should likely be class member varuiables (maps) too
-            // maybe only need on of them and search for the key given the 
-            // value
-            // add cdb node id to map
+            // Add cdb node id to map
             ansys_to_libmesh_node_id_map[ansys_id] = id;
-            // nodeid2idx[id] = idx;
 
             // increment the node index
             id++;
@@ -183,7 +179,7 @@ void CDBIO::read_mesh(std::istream & in)
         
         else if (s.find("ET,") == static_cast<std::string::size_type>(0))  
         {
-          // we have found the Element Type keyword - there may be more than one
+          // We have found the Element Type keyword - there may be more than one
           std::vector<std::string> tokens = tokenize(s);
 
           // The second token is the ansys element type i.e. SOLID226
