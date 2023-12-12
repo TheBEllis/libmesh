@@ -55,7 +55,7 @@ CDBIO::CDBMaps CDBIO::build_element_maps()
     AnsysElementDefinition SOLID226(226, 3);
     
     // std::vector<unsigned int> hex_ordering = {7,4,0,3,6,5,1,2,15,16,11,19,14,12,8,10,13,17,9,18};
-    std::vector<unsigned int> hex_ordering = {0,3,2,1,7,4,5,6,11,8,9,10,19,16,17,18,15,12,13,14};
+    std::vector<unsigned int> hex_ordering = {3,0,1,2,7,4,5,6,11,8,9,10,19,16,17,18,15,12,13,14};
     std::vector<unsigned int> tet_ordering = {2,0,1,3,6,4,5,9,7,8};
     std::vector<unsigned int> prism_ordering = {2,0,1,5,3,4,8,6,7,14,12,13,11,9,10};
     std::vector<unsigned int> pyramid_ordering = {3,0,1,2,4,8,5,6,7,12,9,10,11};
